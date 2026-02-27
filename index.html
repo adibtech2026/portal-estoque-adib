@@ -1,0 +1,348 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADIB TECH - SISTEMA DE GESTÃO</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        :root {
+            --bg-principal: #f4f7f6; 
+            --azul-escuro: #00263e;   
+            --azul-active: #003659;   
+            --dourado: #c5a059;       
+            --branco: #ffffff;
+            --danger: #dc3545;
+            --warning: #ffc107;
+        }
+
+        body { display: flex; background: var(--bg-principal); min-height: 100vh; color: #2c3e50; }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--azul-escuro); color: #ecf0f1; position: fixed; height: 100%; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 1000; }
+        .brand { padding: 25px 20px; text-align: center; background: var(--branco); border-bottom: 3px solid var(--dourado); }
+        .brand img { max-width: 100%; height: auto; }
+        .unit-selector { padding: 20px; background: var(--azul-active); border-bottom: 1px solid #004671; }
+        .unit-selector label { font-size: 11px; color: var(--dourado); text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 8px; }
+        .unit-selector select { width: 100%; background: #001a2b; color: #ffffff; border: 1px solid var(--dourado); padding: 10px; border-radius: 4px; font-size: 13px; font-weight: bold; outline: none; cursor: pointer; }
+
+        .nav-menu { flex-grow: 1; padding-top: 15px; }
+        .nav-item { padding: 18px 25px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; color: rgba(236, 240, 241, 0.7); font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; border-left: 4px solid transparent; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-item.active { background: var(--azul-active); color: white; border-left: 4px solid var(--dourado); }
+
+        /* Conteúdo Principal */
+        .main-content { margin-left: 260px; flex-grow: 1; padding: 40px; }
+        header { background: var(--branco); padding: 18px 40px; margin: -40px -40px 40px -40px; border-bottom: 1px solid #dee2e6; display: flex; justify-content: space-between; align-items: center; }
+
+        .card { background: var(--branco); padding: 25px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 25px; position: relative; }
+        .aba { display: none; animation: fadeIn 0.3s; }
+        .aba.active { display: block; }
+
+        /* KPI Resumo */
+        .kpi-container { display: flex; gap: 20px; margin-bottom: 20px; }
+        .kpi-card { background: var(--branco); padding: 15px; border-radius: 4px; flex: 1; border-left: 4px solid var(--dourado); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .kpi-card small { font-size: 10px; text-transform: uppercase; color: #7f8c8d; font-weight: bold; }
+        .kpi-card div { font-size: 20px; font-weight: bold; color: var(--azul-escuro); }
+
+        /* Estilo das Tabelas */
+        .controls { display: flex; gap: 10px; margin-bottom: 15px; }
+        .search-box { flex-grow: 1; padding: 12px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; background: #f8f9fa; color: var(--azul-escuro); font-size: 10px; text-transform: uppercase; border-bottom: 2px solid var(--dourado); }
+        td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 13px; }
+
+        /* Cores Inteligentes */
+        .row-danger { background-color: #fff5f5 !important; }
+        .row-warning { background-color: #fffdf0 !important; }
+
+        .badge { padding: 4px 8px; border-radius: 3px; font-weight: bold; font-size: 11px; display: inline-block; }
+        .badge-danger { background: var(--danger); color: white; }
+        .badge-warning { background: var(--warning); color: #856404; }
+        .badge-success { background: #d4edda; color: #155724; }
+
+        /* Botões */
+        .btn-acao { background: var(--azul-escuro); color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
+        .btn-acao:hover { opacity: 0.9; }
+        .btn-whatsapp { background: #25d366 !important; }
+        .btn-filter { background: #f8f9fa; color: #333; border: 1px solid #ccc; }
+        .btn-filter.active { background: var(--dourado); color: white; border-color: var(--dourado); }
+
+        .input-file { margin: 15px 0; padding: 15px; border: 2px dashed var(--dourado); width: 100%; background: #fffcf5; border-radius: 4px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand">
+            <img src="https://github.com/adibtech2026/Gestaodepuxada/blob/main/Logo%20Marca%20Vetorizada%20-%20Adib%20+%20AB%20in%20Bev%202025.png?raw=true" alt="Revenda Adib">
+        </div>
+        <div class="unit-selector">
+            <label>Unidade de Negócio</label>
+            <select id="select-unidade" onchange="trocarUnidade()">
+                <option value="sede">Sede</option>
+                <option value="vera_cruz">Filial Vera Cruz</option>
+                <option value="morro_sp">Filial Morro de São Paulo</option>
+            </select>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item active" onclick="navegar('estoque-online', this)">Estoque Online</div>
+            <div class="nav-item" onclick="navegar('faltas', this)">Faltas Críticas</div>
+            <div class="nav-item" onclick="acessoRestrito(this)">Gestão e Importação</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <span style="color: var(--azul-escuro); font-size: 13px; font-weight: bold;">ADIB TECH | Painel de Controle</span>
+            <strong id="label-setor" style="text-transform: uppercase; font-size: 14px; color: var(--dourado);">Estoque Online</strong>
+        </header>
+
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <small>Itens com Ruptura (CSV)</small>
+                <div id="kpi-zerados">0</div>
+            </div>
+            <div class="kpi-card">
+                <small>Rupturas Críticas (Manual)</small>
+                <div id="kpi-faltas">0</div>
+            </div>
+            <div class="kpi-card">
+                <small>Previsões para Hoje</small>
+                <div id="kpi-previsoes">0</div>
+            </div>
+        </div>
+
+        <section id="aba-estoque-online" class="aba active">
+            <div class="card">
+                <div class="controls">
+                    <input type="text" class="search-box" id="busca-online" onkeyup="filtrarEstoque()" placeholder="Buscar produto ou código...">
+                    <button class="btn-acao btn-filter" id="btn-filtro-zero" onclick="toggleFiltroZero()">Apenas Zerados</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cód</th>
+                            <th>Descrição</th>
+                            <th>Inic.</th>
+                            <th>Ent.</th>
+                            <th>Saídas</th>
+                            <th>Disponível</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-estoque-online"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="aba-faltas" class="aba">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3>Informativo de Faltas Críticas</h3>
+                    <button class="btn-acao btn-whatsapp" onclick="copiarWhatsApp()">Copiar para WhatsApp</button>
+                </div>
+                <table id="tabela-faltas">
+                    <thead>
+                        <tr>
+                            <th>Cód / Produto</th>
+                            <th>Estoque</th>
+                            <th>Em Trânsito</th>
+                            <th>Previsão Entrada</th>
+                            <th>Status / Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-faltas"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="aba-gestao" class="aba">
+            <div class="card">
+                <h3>Importar Relatório SAP/Ambev (CSV)</h3>
+                <input type="file" id="csv-file" class="input-file" accept=".csv">
+                <button class="btn-acao" onclick="processarCSV()" style="background: var(--dourado);">Atualizar Unidade Selecionada</button>
+            </div>
+
+            <div class="card">
+                <h3>Lançar Ruptura Manual</h3>
+                <br>
+                <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <input type="number" id="m-cod" onkeyup="buscarProdManual()" placeholder="Código SAP">
+                    <input type="text" id="m-nome" readonly placeholder="Descrição Automática">
+                    <input type="text" id="m-prev" placeholder="Previsão (Ex: 14h)">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 15px;">
+                    <input type="number" id="m-est" placeholder="Estoque Atual">
+                    <input type="number" id="m-trans" placeholder="Em Puxada">
+                    <input type="text" id="m-just" placeholder="Motivo da Falta">
+                </div>
+                <button class="btn-acao" style="margin-top: 20px;" onclick="salvarManual()">Publicar no Painel de Vendas</button>
+            </div>
+
+            <div class="card">
+                <h3>Gerenciar Faltas Ativas</h3>
+                <table id="tabela-admin-manual"></table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const BASE_PRODUTOS = { "347": "SUKITA PET 1L CAIXA C/12", "371": "MALZBIER BRAHMA LONG NECK 355ML SIX-PACK BANDEJA C/4", "503": "SUKITA PET 2L CAIXA C/6", "504": "PEPSI COLA PET 2L CAIXA C/6", "620": "CARACU LONG NECK 355ML SIX-PACK BANDEJA C/4", "982": "SKOL 600ML", "988": "BRAHMA CHOPP 600ML", "1388": "SKOL GFA VD 1L 2,99", "1695": "BRAHMA CHOPP GFA VD 1L COM TTC", "1743": "ANTARCTICA PILSEN GFA VD 1L COM TTC", "1745": "SKOL LT 269ML SH C15 NPAL", "1898": "BRAHMA CHOPP LT 269ML SH C15 NPAL", "2006": "ANTARCTICA SUBZERO 600ML", "2008": "ANTARCTICA SUBZERO LATA 350ML SH C/12 NPAL", "2319": "GUARANA CHP ANTARCTICA PET 1L CAIXA C/12", "2320": "SODA LIMONADA ANTARCTICA PET 1L CAIXA C/12", "2349": "GUARANA CHP ANTARCTICA PET 2L CAIXA C/6", "2350": "SODA LIMONADA ANTARCTICA PET 2L CAIXA C/6", "2353": "GUARANA CHP ANTARCTICA DIET PET 2L CAIXA C/6", "2538": "ANTARCTICA PILSEN 600ML", "2546": "ORIGINAL 600ML", "2548": "BUDWEISER 600ML", "2842": "KRONENBIER LONG NECK 355ML BANDEJA C/12", "2843": "ANTARCTICA MALZEBIER LONG NECK 355ML BANDEJA C/12", "3717": "LIMAO BRAHMA LATA 350ML SHRINK C/12 DECORADO", "4141": "PATAGONIA AMB LAG NACIONAL LT SLEEK 350ML C 8 CX CARTAO", "4143": "PATAGONIA BOH PILS NACIONAL LT SLEEK 350ML C 8 CX CARTAO", "4193": "PATAGONIA WEISSE NACIONAL LT SLEEK 350ML C 8 CX CARTAO", "4198": "PATAGONIA IPA LT SLEEK 350ML C 8 CX CARTAO", "4262": "MICHELOB ULTRA N LT SLEEK 350ML C 8 CX CARTAO", "4293": "PEPSI BLACK PET 200ML SH C/12", "4345": "INDAIA AGUA MINERAL S/GAS GFA PET 5L", "4409": "PEPSI TWIST PET 2L SHRINK C/6", "5333": "BOHEMIA LONG NECK 355ML TWELVE-PACK", "6181": "AGUA MIN DIAS DAVILA S/GAS PET 500ML CAIXA C/12", "6183": "AGUA MIN DIAS DAVILA C/GAS PET 500ML CAIXA C/12", "6185": "AGUA MIN DIAS DAVILA S/GAS PET 1,5L CAIXA C/6", "7325": "PEPSI COLA PET 1L CAIXA C/12", "7532": "PEPSI COLA LIGHT LATA 350ML TWELVE PACK SHRINK", "7945": "PEPSI COLA PET 2,5L CAIXA C/6", "7947": "GUARANA CHP ANTARCTICA PET 2,5L CAIXA C/6", "7977": "GATORADE UVA PET 500ML SIXPACK", "7980": "GATORADE TANGERINA PET 500ML SIXPACK", "7981": "GATORADE LARANJA PET 500ML SIXPACK", "7982": "GATORADE LIMAO PET 500ML SIXPACK", "7983": "GATORADE MORANGO-MARACUJA PET 500ML SIXPACK", "8411": "GUARANA CHP ANTARCTICA PET 1,5 SHRINK C/6", "8791": "H2OH LIMAO C/GAS PET 500ML CAIXA C/12", "8793": "H2OH LIMAO C/GAS PET 1,5L CAIXA C/6", "9067": "ANTARCTICA PILSEN LATA 350ML SH C/12 NPAL", "9068": "SKOL LATA 350ML SH C/12 NPAL", "9069": "BRAHMA CHOPP LATA 350ML SH C/12 NPAL", "9072": "BOHEMIA NOVA EMBALAGEM LATA 350ML SH C/12 NPAL", "9083": "SKOL LT 473ML SH C/12 NPAL", "9084": "GUARANA CHP ANTARCTICA LATA 350ML SH C/12 NPAL", "9085": "GUARANA CHP ANTARCTICA DIET LATA 350ML SH C/12 NPAL", "9087": "SODA LIMONADA ANTARCTICA LATA 350ML SH C/12 NPAL", "9089": "SUKITA LATA 350ML SH C/12 NPAL", "9091": "TONICA ANTARCTICA LATA 350ML SH C/12 NPAL", "9092": "TONICA ANTARCTICA DIET LATA 350ML SH C/12 NPAL", "9096": "PEPSI COLA LATA 350ML SH C/12 NPAL", "9274": "PEPSI ZERO LATA 350ML SH C/12 NPAL", "9276": "PEPSI ZERO PET 2L CAIXA C/6", "9320": "BRAHMA CHOPP LT 473ML SH C/12 NPAL", "9795": "GUARANA ANTARCTICA ZERO PET 1L CAIXA C/12", "9992": "SUKITA VITAMINADA LATA 350ML SH C/12 NPAL", "10298": "GUARANA ANTARCTICA ACAI PET 2L CAIXA C/6", "10530": "ANTARCTICA SUBZERO GFA VD 1L", "10537": "BOHEMIA GFA VD 990ML", "12948": "BRAHMA CHOPP ZERO LATA 350ML SH C/12 NPAL", "12951": "BRAHMA CHOPP ZERO LN 355ML SIXPACK CX CART C/04", "13061": "H2OH LIMONETO PET 500ML SHRINK C/12 NPAL", "13065": "H2OH LIMONETO PET 1,5 SHRINK C/06 NPAL", "13196": "SKOL ONE WAY 300ML CX C/23", "13201": "BRAHMA CHOPP GFA VD 300ML CX C/23", "13205": "SKOL GFA VD 300ML CX C/23", "13307": "BUDWEISER GFA VD 990ML CX C/12", "13566": "SKOL BEATS SENSES LT 269ML CX C/8 FRIDGE PACK", "14135": "BUDWEISER LATA 473ML SIX-PACK SH C/2 NPAL", "14550": "COLORADO APPIA ONE WAY 600ML CX C-12 ARTE", "16503": "BOHEMIA GFA VD 300ML CX C/23", "17757": "BECKS N LONG NECK 330ML SIX-PACK SHRINK C/4", "17808": "BUDWEISER OW 330ML CX C/24", "18152": "GUARANA CHP ANTARCTICA PET 200ML SH C/12", "18266": "PEPSI COLA PET 200ML SH C/12", "18267": "SODA LIMONADA ANTARCTICA PET 200ML SH C/12", "18268": "SUKITA PET 200ML SH C/12", "18780": "CORONITA EXTRA N OW 210ML CX C/4 SIX PACK", "18807": "STELLA ARTOIS LONG NECK 330ML SIX-PACK SHRINK C/4", "18836": "CORONA EXTRA N LONG NECK 330ML CX C/24 NPAL", "19166": "COLORADO LAGER ONE WAY 600ML CX C-12 ARTE", "19225": "RED BULL BR LATA 250ML CX C 24 NPAL", "19227": "RED BULL BR LATA 355ML FOUR PACK", "19229": "RED BULL BR LATA 250ML SIX PACK NPAL", "19231": "RED BULL SUGAR FREE BR LATA 250ML FOUR PACK NPAL", "19321": "GUARANA ANTARCTICA ZERO PET 200ML SH C/12", "19668": "ORIGINAL LATA 350ML SH C/12 NPAL", "19729": "STELLA ARTOIS LT SLEEK 350ML C 8 CX CARTAO", "20217": "ORIGINAL GFA VD 300ML CX C/23", "20329": "BRAHMA DUPLO MALTE 600ML", "20498": "BRAHMA DUPLO MALTE LT SLEEK 350ML SH C 12", "20530": "STELLA ARTOIS 600 ML", "20533": "BRAHMA DUPLO MALTE GFA VD 1L", "20535": "STELLA ARTOIS ONE WAY 600ML CX C/12 NPAL", "20549": "BRAHMA DUPLO MALTE GFA VD 300ML CX C/23", "20651": "CORONA EXTRA N LT SLEEK 350ML C 8 CX CARTAO", "20853": "COLORADO LAGER LT SLEEK 350ML C 8 CX CARTAO", "21020": "BUDWEISER LT SLEEK 350ML CX CART C 12", "21119": "SKOL BEATS GT LT 269ML CX CARTAO C/8 NPAL", "21526": "JOHNNIE WALKER RED LABEL GARRAFA VIDRO 1 L", "21527": "TANQUERAY GIN LONDON DRY GARRAFA VIDRO 750ML", "21529": "ABSOLUT ORIGINAL GARRAFA VIDRO 1 L", "21530": "SMIRNOFF ORIGINAL GARRAFA VIDRO 998ML", "21632": "SPATEN N LN 355ML SIXPACK SH C/4", "21658": "SPATEN N LT SLEEK 350ML CX CART C 12", "21666": "RED BULL TROPICAL BR LATA 250ML FOUR PACK NPAL", "21668": "SPATEN N ONE WAY 600ML CX C/12 NP ARTE", "21781": "SMIRNOFF ICE GARRAFA VD 275ML CX C24", "21786": "MONTILLA CARTA BRANCA GARRAFA VIDRO 1 L", "21788": "BALLANTINES FINEST GARRAFA VIDRO 1 L", "21789": "ORLOFF GARRAFA VIDRO 1 L", "21791": "PIRASSUNUNGA 51 GARRAFA VIDRO 965ML", "21792": "WHITE HORSE GARRAFA VIDRO 1 L", "21955": "CHIVAS REGAL 12 ANOS GARRAFA VIDRO 1 L", "21968": "TRIDENT HORTELA ENVELOPE 8G CX C/21", "21970": "TRIDENT MENTA ENVELOPE 8G CX C/21", "21973": "TRIDENT MELANCIA ENVELOPE 8G CX C/21", "21974": "TRIDENT TUTTI-FRUTTI ENVELOPE 8G CX C/21", "22003": "HALLS CEREJA ENVELOPE 28G CX C/21", "22005": "HALLS MENTA ENVELOPE 28G CX C/21", "22007": "HALLS EXTRA FORTE ENVELOPE 28G CX C/21", "22009": "CHICLETE ADAMS HORTELA CAIXINHA 2,8G CX C/100", "22027": "COLORADO APPIA LT SLEEK 350ML C8 CX CARTAO NPAL", "22106": "MINI OREO PCT 35G CX C/10", "22177": "BUDWEISER ZERO LT SLEEK 350ML C 8 CX CARTAO", "22180": "BUDWEISER ZERO LONG NECK 330ML SIX-PACK SHRINK C/4", "22200": "TONICA ANTARCTICA PET 1 L SH C/06", "22202": "TONICA ANTARCTICA ZERO PET 1L SH C/06", "22382": "PASSPORT SELECTION GARRAFA VIDRO 1 L", "22562": "DOMECQ COQ. COMPOSTO GARRAFA VIDRO 1 L", "22564": "ABSOLUT ORIGINAL GARRAFA VIDRO 750ML", "22641": "PRESIDENTE CONHAQ GARRAFA VIDRO 900ML", "23000": "CERVEGELA PLASTICA SKOL 1 UN P/ GFA 600ML CX C/18", "23029": "JOHNNIE WALKER BLACK LABEL GARRAFA VIDRO 1 L", "23184": "PITU AGUARDENTE LT 350ML CX C/12", "23186": "SPATEN N 600ML", "23246": "PIRACANJUBA LEITE CONDENSADO TETRAPAK 395G CX C/27", "23256": "PIRACANJUBA CREME DE LEITE TETRAPAK 200G CX C/27", "23269": "SKOL BEATS GT LONG NECK 269ML SIX-PACK SH C/4", "23271": "SKOL BEATS SENSES LONG NECK 269ML SIX-PACK SH C/4", "23443": "PITU AGUARDENTE GARRAFA VIDRO 965ML", "23546": "INDAIA AGUA MINERAL C/GAS GFA PET 500ML PACK C/12", "23552": "INDAIA AGUA MINERAL S/GAS GFA PET 500ML PACK C/12", "23594": "PIRAKIDS BEBIDA LACTEA CHOCOLATE TETRA PAK 200 ML CX C/27", "23672": "CERVEGELA PLASTICA BRAHMA 1 UN P/ GFA 600ML CX C/3", "23674": "CERVEGELA PLASTICA SKOL 1 UN P/ GFA 600ML CX C/3", "24256": "PETROPOLIS AGUA MIN SEM GAS PET 1,5 SHRINK C/6", "24306": "RED BULL MELANCIA LATA 250ML FOUR PACK NPAL", "24409": "QUINTA DO MORGADO VINHO TINTO SUAVE GFA VD 750 ML", "24584": "BEEFEATER 24 GFA VD 750 ML", "25151": "OLD PARR WHISKY GFA VDR 1L", "25160": "BLACK & WHITE WHISKY GFA VDR 1L", "25174": "51 ICE BALADA GARRAFA VD 275ML CX C24", "25176": "51 ICE FRUIT MIX MORANGO + LARANJA GARRAFA VD 275ML CX C24", "25178": "51 ICE LIMAO GARRAFA VD 275ML CX C24", "25220": "CACHACA 51 PIRASS OURO DESCARTAVEL GFA DE VDRO 965ML", "25546": "GARRAFEIRA PL. AL. LAT. AB. PRETA BEES 1 UN P/ 23 GFA 300ML", "25700": "FUSION PET 2L SHRINK C/6", "26941": "PITU AGUARDENTE LATA DE ALUMINIO 473ML CX12", "27001": "GORDONS GIN DRY GFA VD 750 ML", "27177": "HALLS MENTOL ENVELOPE 28G CX C/21", "27179": "HALLS MORANGO ENVELOPE 28G CX C/21", "27691": "BALLANTINES 12 YEARS GFA VD 750 ML", "27866": "CORONA CERO SUNBREW N LONG NECK 330 ML SP BASKET CX C4", "28214": "MINALBA AGUA MINERAL S/GAS LAT 310ML FD 12", "28216": "MINALBA AGUA MINERAL C/GAS LAT 310ML FD 12", "29197": "TANG REFRESCO EM PO LIMAO PCT 18G DP C/18", "29199": "TANG REFRESCO EM PO LARANJA PCT 18G DP C/18", "29201": "TANG REFRESCO EM PO ABACAXI PCT 18G DP C/18", "29207": "TANG REFRESCO EM PO MORANGO PCT 18G DP C/18", "29209": "TANG REFRESCO EM PO MARACUJA PCT 18G DP C/18", "29215": "TANG REFRESCO EM PO UVA PCT 18G DP C/18", "29232": "51 ICE MACA VERDE GARRAFA VD 275ML CX C24", "29253": "ORIGINAL GFA VD 1L", "29323": "INDAIA BEB MISTA CITRUS LARANJA GFA PET 330ML FD C/12", "29580": "STELLA ARTOIS PURE GOLD LONG NECK 330ML SP SH C/4", "29733": "HALLS MELANCIA ENVELOPE 28G CX C/21", "29845": "PEPSI BLACK PET 1 L SH C/12", "30045": "RED BULL BR LATA 473ML CX C 12", "31272": "FUSION LT 473ML SH C/12 NPAL", "31582": "YPE LAVA LOUCAS LIQUIDO CLEAR FRASCO PLASTICO 500 ML C24", "31589": "YPE LAVA LOUCAS LIQUIDO MACA FRASCO PLASTICO 500 ML C24", "31593": "YPE TIXAN LAVA ROUPAS PO PRIMAV CX PAPEL CART 1,6 KG C9", "31667": "YPE LAVA LOUCAS LIQUIDO NEUTRO FRASCO PLASTICO 500 ML C24", "31710": "YPE DESINFETANTE PINHO TRADICAO FRASCO PLAST 500ML CX/12", "31791": "YPE MULTIUSO CLASSICO FRASCO PLAST 500ML CX/12", "31811": "YPE AMACIANTE PRIMAVERA FRASCO PLASTICO 2 L CX6", "32067": "GATORADE BERRY BLUE PET 500ML SIXPACK", "32349": "BEATS TROPICAL LT 269ML CX CARTAO C/8 NPAL", "32361": "BEATS TROPICAL LONG NECK 269ML SIX-PACK SH C/4", "32433": "INDAIA BEB MISTA CITRUS UVA GFA PET 330ML FD C/12", "32500": "STELLA ARTOIS PURE GOLD LT SLEEK 350ML C 8 CX CARTAO", "32526": "PETROPOLIS AGUA MIN SEM GAS GARRAFA PET 500MLCX C12", "32528": "PETROPOLIS AGUA MIN COM GAS GARRAFA PET 500MLCX C12", "32969": "RED BULL SUMMER MORANGO E PESSEGO LATA 250ML FOUR PACK NPAL", "33734": "BEATS RED MIX LT 269ML SH C/8", "33738": "BEATS RED MIX LONG NECK 269ML SIX-PACK SH C/2", "33818": "ORIGINAL LATA 350ML SHRINK C/12 MULTPACK", "33820": "BRAHMA CHOPP LATA 350ML SH C/12 NPAL MULTIPACK", "34027": "GUARANA CHP ANTARCTICA LATA 350ML SH C/12 NPAL MULTIPACK", "34263": "CORONA CERO SUNBREW N LT SLEEK 350ML C 8 CX CARTAO", "34296": "TRIDENT CANELA ENVELOPE 8G CX C/21", "34298": "TRIDENT MORANGO ENVELOPE 8G CX C/21", "34320": "GUARANA ANTARCTICA ZERO LATA 350ML SH C/12 NPAL MULTIPACK", "34410": "HALLS UVA VERDE ENVELOPE 28G CX C/21", "34420": "RED BULL SUMMER MARACUJA e MELAO LATA 250ML FOUR PACK NPAL", "34429": "RED BULL SUGAR FREE AMORA LATA 250ML FOUR PACK NPAL", "34432": "RED BULL TROPICAL BR LATA 473ML CX C 12", "34608": "SKOL LATA 350ML SH C/12 NPAL MULTIPACK", "34770": "RED BULL SUGAR FREE POMELO LATA 250ML FOUR PACK NPAL", "35108": "CERVEGELA PLASTICA SPATEN 1 UN P/ GFA 600ML CX3", "35617": "BEATS GREEN MIX LT 269ML SH C/8", "35620": "BEATS GREEN MIX LONG NECK 269ML SIX-PACK SH C/4", "37576": "DOCES VIEIRA PE DE MOCA PCT PLAST 23G POTE C/40", "37579": "DOCES VIEIRA BEIJO DE LEITE PCT PLAST 23G POTE C/40", "37580": "DOCES VIEIRA CHURRITOS PCT PLAST 23G POTE C/40", "37581": "DOCES VIEIRA COCADA BAIANA PCT PLAST 23G POTE C/40", "37582": "DOCES VIEIRA COCADA BRANCA PCT PLAST 23G POTE C/40", "37583": "DOCES VIEIRA BEIJO DE MOCA PCT PLAST 23G POTE C/40" };
+
+        let unidadeAtual = "sede";
+        let apenasZerados = false;
+
+        function navegar(id, el) {
+            document.querySelectorAll('.aba').forEach(a => a.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById('aba-'+id).classList.add('active');
+            if(el) el.classList.add('active');
+            document.getElementById('label-setor').innerText = id.replace('-', ' ');
+            atualizarTelas();
+        }
+
+        function trocarUnidade() {
+            unidadeAtual = document.getElementById('select-unidade').value;
+            atualizarTelas();
+        }
+
+        function acessoRestrito(el) {
+            if(prompt("Acesso Analista (Senha):") === "2001") navegar('gestao', el);
+            else alert("Senha incorreta.");
+        }
+
+        function limparNumero(val) {
+            if(!val) return 0;
+            let n = val.toString().trim().replace(/^0+/, '');
+            return n === '' ? 0 : n;
+        }
+
+        function processarCSV() {
+            const file = document.getElementById('csv-file').files[0];
+            if(!file) return alert("Selecione o arquivo.");
+
+            Papa.parse(file, {
+                header: true, delimiter: ";", skipEmptyLines: true, encoding: "ISO-8859-1",
+                complete: function(results) {
+                    const dados = results.data.map(i => ({
+                        cod: limparNumero(i.Cod),
+                        desc: i.Descricao,
+                        inic: limparNumero(i.Inicial),
+                        ent: limparNumero(i['Ent.']),
+                        sai: limparNumero(i.Saidas),
+                        disp: limparNumero(i['Disp.'])
+                    }));
+                    localStorage.setItem('adib_online_v8_'+unidadeAtual, JSON.stringify(dados));
+                    alert("Estoque Atualizado!");
+                    atualizarTelas();
+                    navegar('estoque-online', document.querySelector('.nav-item'));
+                }
+            });
+        }
+
+        function salvarManual() {
+            const cod = document.getElementById('m-cod').value;
+            if(!BASE_PRODUTOS[cod]) return alert("Código Ambev inválido.");
+            
+            let faltas = JSON.parse(localStorage.getItem('adib_faltas_v8_'+unidadeAtual)) || [];
+            faltas.push({
+                id: Date.now(),
+                cod: cod,
+                nome: document.getElementById('m-nome').value,
+                est: document.getElementById('m-est').value || 0,
+                trans: document.getElementById('m-trans').value || 0,
+                prev: document.getElementById('m-prev').value,
+                just: document.getElementById('m-just').value || "Não informado"
+            });
+            localStorage.setItem('adib_faltas_v8_'+unidadeAtual, JSON.stringify(faltas));
+            alert("Ruptura publicada!");
+            atualizarTelas();
+        }
+
+        function removerManual(id) {
+            let faltas = JSON.parse(localStorage.getItem('adib_faltas_v8_'+unidadeAtual)) || [];
+            faltas = faltas.filter(f => f.id !== id);
+            localStorage.setItem('adib_faltas_v8_'+unidadeAtual, JSON.stringify(faltas));
+            atualizarTelas();
+        }
+
+        function toggleFiltroZero() {
+            apenasZerados = !apenasZerados;
+            const btn = document.getElementById('btn-filtro-zero');
+            btn.classList.toggle('active');
+            atualizarTelas();
+        }
+
+        function filtrarEstoque() {
+            const t = document.getElementById('busca-online').value.toLowerCase();
+            document.querySelectorAll('#corpo-estoque-online tr').forEach(r => {
+                const visible = r.innerText.toLowerCase().includes(t);
+                r.style.display = visible ? "" : "none";
+            });
+        }
+
+        function copiarWhatsApp() {
+            const faltas = JSON.parse(localStorage.getItem('adib_faltas_v8_'+unidadeAtual)) || [];
+            if(faltas.length === 0) return alert("Nenhuma falta crítica.");
+            let texto = `*INFORMATIVO ADIB - FALTAS ${unidadeAtual.toUpperCase()}*\n\n`;
+            faltas.forEach(f => {
+                texto += `🚫 *${f.nome}*\nPrevisão: ${f.prev}\nJustificativa: ${f.just}\n\n`;
+            });
+            navigator.clipboard.writeText(texto);
+            alert("Relatório copiado!");
+        }
+
+        function buscarProdManual() {
+            const cod = document.getElementById('m-cod').value;
+            document.getElementById('m-nome').value = BASE_PRODUTOS[cod] || "Não localizado";
+        }
+
+        function atualizarTelas() {
+            const online = JSON.parse(localStorage.getItem('adib_online_v8_'+unidadeAtual)) || [];
+            const corpoOnline = document.getElementById('corpo-estoque-online');
+            corpoOnline.innerHTML = "";
+            let zeradosCount = 0;
+
+            online.forEach(i => {
+                const estNum = parseInt(i.disp);
+                if (estNum <= 0) zeradosCount++;
+                if (apenasZerados && estNum > 0) return;
+
+                let rowClass = estNum <= 0 ? 'row-danger' : (estNum <= 10 ? 'row-warning' : '');
+                let badgeClass = estNum <= 0 ? 'badge-danger' : (estNum <= 10 ? 'badge-warning' : 'badge-success');
+
+                corpoOnline.innerHTML += `
+                    <tr class="${rowClass}">
+                        <td>${i.cod}</td>
+                        <td>${i.desc}</td>
+                        <td>${i.inic}</td>
+                        <td>${i.ent}</td>
+                        <td>${i.sai}</td>
+                        <td><span class="badge ${badgeClass}">${estNum}</span></td>
+                    </tr>`;
+            });
+
+            const faltas = JSON.parse(localStorage.getItem('adib_faltas_v8_'+unidadeAtual)) || [];
+            const corpoFaltas = document.getElementById('corpo-faltas');
+            const corpoAdmin = document.getElementById('tabela-admin-manual');
+            corpoFaltas.innerHTML = "";
+            corpoAdmin.innerHTML = "<tr><th>Produto</th><th>Ação</th></tr>";
+
+            faltas.forEach(f => {
+                corpoFaltas.innerHTML += `<tr><td><strong>${f.cod}</strong> - ${f.nome}</td><td><span class="badge badge-danger">${f.est}</span></td><td><span class="badge badge-warning">${f.trans}</span></td><td style="color:var(--dourado); font-weight:bold">${f.prev}</td><td>${f.just}</td></tr>`;
+                corpoAdmin.innerHTML += `<tr><td style="font-size:11px"><strong>${f.cod}</strong> - ${f.nome}</td><td><button onclick="removerManual(${f.id})" style="color:red; border:none; background:none; cursor:pointer;">Remover</button></td></tr>`;
+            });
+
+            document.getElementById('kpi-zerados').innerText = zeradosCount;
+            document.getElementById('kpi-faltas').innerText = faltas.length;
+            document.getElementById('kpi-previsoes').innerText = faltas.filter(f => f.prev.toLowerCase().includes('hoje')).length;
+        }
+
+        trocarUnidade();
+    </script>
+</body>
+</html>
